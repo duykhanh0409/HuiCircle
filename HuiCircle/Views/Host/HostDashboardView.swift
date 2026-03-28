@@ -92,7 +92,9 @@ struct HostSummaryView: View {
                 }
             }
             .onAppear {
-                appearCards = true
+                DispatchQueue.main.async {
+                    appearCards = true
+                }
             }
         }
     }

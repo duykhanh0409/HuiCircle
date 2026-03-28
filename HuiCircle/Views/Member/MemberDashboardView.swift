@@ -73,12 +73,7 @@ struct MyGroupsView: View {
                     .listRowBackground(Color.clear)
                 } else {
                     ForEach(groups) { group in
-                        ZStack {
-                            NavigationLink(destination: GroupDetailMemberView(group: group)) {
-                                EmptyView()
-                            }
-                            .opacity(0)
-                            
+                        NavigationLink(destination: GroupDetailMemberView(group: group)) {
                             HuiCardView(
                                 title: group.name,
                                 amount: group.baseAmount,

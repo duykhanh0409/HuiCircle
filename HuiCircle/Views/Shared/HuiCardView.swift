@@ -58,7 +58,9 @@ struct HuiCardView: View {
         .cornerRadius(DesignTokens.Defaults.cornerRadius)
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
         .onAppear {
-            animatedProgress = progress
+            DispatchQueue.main.async {
+                animatedProgress = progress
+            }
         }
     }
     

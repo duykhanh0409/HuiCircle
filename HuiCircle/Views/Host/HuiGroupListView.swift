@@ -20,12 +20,7 @@ struct HuiGroupListView: View {
                     .listRowSeparator(.hidden)
                 } else {
                     ForEach(groups) { group in
-                        ZStack {
-                            NavigationLink(destination: HuiGroupDetailView(group: group)) {
-                                EmptyView()
-                            }
-                            .opacity(0)
-                            
+                        NavigationLink(destination: HuiGroupDetailView(group: group)) {
                             HuiCardView(
                                 title: group.name,
                                 amount: group.baseAmount,
