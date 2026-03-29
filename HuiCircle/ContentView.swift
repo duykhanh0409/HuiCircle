@@ -10,97 +10,66 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("selectedRole") private var selectedRole: String = ""
+    @Environment(AppState.self) private var appState
+    
+    /// Lấy tất cả users trong DB, nếu có thì tự động login
+    @Query private var users: [User]
     
     var body: some View {
         Group {
-            if selectedRole == "host" {
-                HostDashboardView()
-            } else if selectedRole == "member" {
-                MemberDashboardView()
+            if let user = appState.currentUser {
+                // Đã đăng nhập — routing theo role
+                switch user.role {
+                case .host:
+                    HostDashboardView()
+                case .member:
+                    MemberDashboardView()
+                case .both:
+                    BothRoleDashboardView()
+                }
             } else {
-                RoleSelectionView(selectedRole: $selectedRole)
+                OnboardingView()
             }
         }
         .onAppear {
-            MockDataService.shared.seedDataIfNeeded(modelContext: modelContext)
+            // Auto-login: nếu DB đã có user (không phải lần đầu) thì login luôn
+            if appState.currentUser == nil, let existingUser = users.first {
+                appState.currentUser = existingUser
+            }
+        }
+        .onChange(of: users) { _, newUsers in
+            if appState.currentUser == nil, let existingUser = newUsers.first {
+                appState.currentUser = existingUser
+            }
         }
     }
 }
 
-struct RoleSelectionView: View {
-    @Binding var selectedRole: String
-    @State private var isAnimating = false
+/// Dashboard cho user có cả 2 roles — hiển thị TabView với cả Host lẫn Member tabs
+struct BothRoleDashboardView: View {
+    @Environment(AppState.self) private var appState
+    @State private var activeTab: Int = 0
     
     var body: some View {
-        VStack(spacing: 30) {
-            Image(systemName: "person.3.sequence.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(DesignTokens.Colors.gradient)
-                .scaleEffect(isAnimating ? 1 : 0.5)
-                .opacity(isAnimating ? 1 : 0)
-                .animation(.spring(response: 0.6, dampingFraction: 0.6), value: isAnimating)
+        TabView(selection: $activeTab) {
+            HostGroupsTab()
+                .tabItem { Label("Quản lý Hụi", systemImage: "crown.fill") }
+                .tag(0)
             
-            Text("HuiCircle")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .opacity(isAnimating ? 1 : 0)
-                .offset(y: isAnimating ? 0 : 20)
-                .animation(.easeOut(duration: 0.6).delay(0.2), value: isAnimating)
+            MemberGroupsTab()
+                .tabItem { Label("Hụi của tôi", systemImage: "list.star") }
+                .tag(1)
             
-            Text("Bạn là ai?")
-                .font(.title2)
-                .foregroundColor(.secondary)
-                .opacity(isAnimating ? 1 : 0)
-                .animation(.easeOut(duration: 0.6).delay(0.3), value: isAnimating)
-            
-            VStack(spacing: 20) {
-                Button(action: {
-                    withAnimation { selectedRole = "host" }
-                }) {
-                    HStack {
-                        Image(systemName: "crown.fill")
-                        Text("Chủ Hụi (Host)")
-                            .fontWeight(.bold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(DesignTokens.Colors.primaryStart)
-                    .foregroundColor(.white)
-                    .cornerRadius(DesignTokens.Defaults.cornerRadius)
-                }
-                .shadow(color: DesignTokens.Colors.primaryStart.opacity(0.3), radius: 10, x: 0, y: 5)
-                .scaleEffect(isAnimating ? 1 : 0.8)
-                .opacity(isAnimating ? 1 : 0)
-                .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.4), value: isAnimating)
-                
-                Button(action: {
-                    withAnimation { selectedRole = "member" }
-                }) {
-                    HStack {
-                        Image(systemName: "person.fill")
-                        Text("Người Chơi (Member)")
-                            .fontWeight(.bold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(DesignTokens.Colors.cardBackground)
-                    .foregroundColor(.primary)
-                    .cornerRadius(DesignTokens.Defaults.cornerRadius)
-                }
-                .scaleEffect(isAnimating ? 1 : 0.8)
-                .opacity(isAnimating ? 1 : 0)
-                .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.5), value: isAnimating)
-            }
-            .padding(.horizontal, 40)
+            ProfileView()
+                .tabItem { Label("Hồ Sơ", systemImage: "person.circle") }
+                .tag(2)
         }
-        .padding()
-        .onAppear {
-            isAnimating = true
-        }
+        .accentColor(DesignTokens.Colors.primaryStart)
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: HuiGroup.self, inMemory: true)
+        .modelContainer(for: [HuiGroup.self, User.self, HuiMembership.self], inMemory: true)
+        .environment(AppState())
 }

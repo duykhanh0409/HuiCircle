@@ -69,11 +69,21 @@ struct MemberListView: View {
     private func addMember() {
         guard !newMemberName.isEmpty else { return }
         
-        // Add member logic
         let member = HuiMember(name: newMemberName, phone: newMemberPhone, joinedAt: Date(), hasWon: false)
         modelContext.insert(member)
         member.group = group
         group.members.append(member)
+        
+        // Tự động tạo HuiMembership để Member user có thể thấy dây hụi theo SĐT
+        if !newMemberPhone.isEmpty {
+            let membership = HuiMembership(
+                memberPhone: newMemberPhone,
+                group: group,
+                member: member
+            )
+            modelContext.insert(membership)
+        }
+        
         clearForm()
     }
     

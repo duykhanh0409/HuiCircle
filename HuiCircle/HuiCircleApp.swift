@@ -10,9 +10,12 @@ import SwiftData
 
 @main
 struct HuiCircleApp: App {
+    @State private var appState = AppState()
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            HuiGroup.self, HuiMember.self, HuiRound.self, Payment.self
+            HuiGroup.self, HuiMember.self, HuiRound.self, Payment.self,
+            User.self, HuiMembership.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -28,5 +31,7 @@ struct HuiCircleApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+        .environment(appState)
     }
 }
+

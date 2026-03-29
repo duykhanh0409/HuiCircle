@@ -4,6 +4,7 @@ import SwiftData
 struct CreateHuiGroupView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
     
     @State private var name: String = ""
     @State private var baseAmountStr: String = ""
@@ -57,7 +58,8 @@ struct CreateHuiGroupView: View {
             totalRounds: totalMembers,
             startDate: startDate,
             frequency: frequency,
-            status: .active
+            status: .active,
+            ownerUserID: appState.currentUser?.id
         )
         modelContext.insert(newGroup)
         

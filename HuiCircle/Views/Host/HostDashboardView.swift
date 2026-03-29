@@ -1,130 +1,139 @@
 import SwiftUI
+import SwiftData
 
 struct HostDashboardView: View {
-    @AppStorage("selectedRole") private var selectedRole: String = ""
+    @Environment(AppState.self) private var appState
     
     var body: some View {
         TabView {
-            HostSummaryView(logoutAction: {
-                withAnimation { selectedRole = "" }
-            })
-                .tabItem {
-                    Label("Tổng Quan", systemImage: "chart.bar.fill")
-                }
+            HostGroupsTab()
+                .tabItem { Label("Tổng Quan", systemImage: "chart.bar.fill") }
             
-            HuiGroupListView()
-                .tabItem {
-                    Label("Dây Hụi", systemImage: "list.clipboard")
-                }
+            ProfileView()
+                .tabItem { Label("Hồ Sơ", systemImage: "person.circle") }
         }
         .accentColor(DesignTokens.Colors.primaryStart)
     }
 }
 
-struct HostSummaryView: View {
-    let logoutAction: () -> Void
+// MARK: - Host Groups Tab (reusable giữa HostDashboard và BothRoleDashboard)
+
+struct HostGroupsTab: View {
+    @Environment(AppState.self) private var appState
+    @Query private var allGroups: [HuiGroup]
+    @State private var showingCreateGroup = false
     @State private var appearCards = false
+    
+    private var ownedGroups: [HuiGroup] {
+        guard let userID = appState.currentUser?.id else { return [] }
+        return allGroups
+            .filter { $0.ownerUserID == userID }
+            .sorted { $0.startDate > $1.startDate }
+    }
+    
+    private var pendingPaymentsCount: Int {
+        ownedGroups.flatMap { group in
+            group.rounds
+                .filter { $0.status == .active }
+                .flatMap { round in
+                    group.members.filter { member in
+                        !(member.payments.first { $0.roundNumber == round.roundNumber }?.isPaid ?? false)
+                    }
+                }
+        }.count
+    }
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("Chào Chủ Hụi 👋")
-                                .font(.title)
-                                .fontWeight(.bold)
-                            Text("Tổng quan tình hình hôm nay")
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding(.top)
+                    // Hero header
+                    HeaderBanner(
+                        title: "Xin chào, \(appState.currentUser?.name ?? "Chủ Hụi") 👋",
+                        subtitle: "Bạn đang quản lý \(ownedGroups.count) dây hụi",
+                        appearCards: $appearCards
+                    )
                     
-                    // Simple Statistics (Hardcoded math for UI demo)
-                    HStack(spacing: 16) {
-                        StatCard(title: "Dây Hụi Đang Chạy", value: "2", icon: "arrow.triangle.2.circlepath", color: .blue)
-                            .scaleEffect(appearCards ? 1 : 0.8)
-                            .opacity(appearCards ? 1 : 0)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1), value: appearCards)
-                            
-                        StatCard(title: "Tổng Người Chơi", value: "30", icon: "person.2.fill", color: .green)
-                            .scaleEffect(appearCards ? 1 : 0.8)
-                            .opacity(appearCards ? 1 : 0)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.2), value: appearCards)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader(title: "Cảnh báo chưa đóng")
+                    // Stats row
+                    HStack(spacing: 12) {
+                        StatCard(
+                            title: "Dây đang chạy",
+                            value: "\(ownedGroups.filter { $0.status == .active }.count)",
+                            icon: "arrow.triangle.2.circlepath",
+                            color: .blue
+                        )
+                        .scaleEffect(appearCards ? 1 : 0.8)
+                        .opacity(appearCards ? 1 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.15), value: appearCards)
                         
-                        // Fake Warning Data
-                        HStack(spacing: 16) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.orange)
-                                .font(.title)
-                            
-                            VStack(alignment: .leading) {
-                                Text("3 thành viên đang chậm thanh toán")
-                                    .font(.headline)
-                                Text("Tổng số tiền phạt/nợ: 3,000,000đ")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding()
-                        .background(Color.orange.opacity(0.1))
-                        .cornerRadius(12)
+                        StatCard(
+                            title: "Chưa nộp tiền",
+                            value: "\(pendingPaymentsCount)",
+                            icon: "exclamationmark.triangle.fill",
+                            color: pendingPaymentsCount > 0 ? .orange : .green
+                        )
+                        .scaleEffect(appearCards ? 1 : 0.8)
+                        .opacity(appearCards ? 1 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.25), value: appearCards)
                     }
-                    .padding(.top)
-                    .opacity(appearCards ? 1 : 0)
-                    .animation(.easeOut(duration: 0.6).delay(0.4), value: appearCards)
+                    
+                    // Group List
+                    VStack(spacing: 0) {
+                        SectionHeader(
+                            title: "Danh Sách Dây Hụi",
+                            actionTitle: "Tạo mới",
+                            action: { showingCreateGroup = true }
+                        )
+                        
+                        if ownedGroups.isEmpty {
+                            EmptyStateView(
+                                iconName: "tray.fill",
+                                title: "Chưa có dây hụi nào",
+                                message: "Tạo dây hụi đầu tiên để bắt đầu quản lý.",
+                                buttonTitle: "Tạo Dây Hụi",
+                                buttonAction: { showingCreateGroup = true }
+                            )
+                        } else {
+                            ForEach(ownedGroups) { group in
+                                NavigationLink(destination: HuiGroupDetailView(group: group)) {
+                                    HuiCardView(
+                                        title: group.name,
+                                        amount: group.baseAmount,
+                                        frequency: group.frequency.rawValue,
+                                        statusText: group.status.rawValue,
+                                        statusColor: statusColor(for: group.status),
+                                        progress: progress(for: group)
+                                    )
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    }
                 }
                 .padding()
             }
-            .navigationTitle("Dashboard")
+            .navigationTitle("Quản Lý Hụi")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Thoát Role") {
-                        logoutAction()
-                    }
-                }
+            .sheet(isPresented: $showingCreateGroup) {
+                CreateHuiGroupView()
             }
             .onAppear {
-                DispatchQueue.main.async {
-                    appearCards = true
-                }
+                DispatchQueue.main.async { appearCards = true }
             }
         }
     }
-}
-
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(value)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+    private func statusColor(for status: GroupStatus) -> Color {
+        switch status {
+        case .active: return .green
+        case .completed: return .blue
+        case .paused: return .orange
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(DesignTokens.Colors.cardBackground)
-        .cornerRadius(DesignTokens.Defaults.cornerRadius)
+    }
+    
+    private func progress(for group: HuiGroup) -> Double {
+        guard group.totalRounds > 0 else { return 0 }
+        let completed = group.rounds.filter { $0.status == .completed }.count
+        return Double(completed) / Double(group.totalRounds)
     }
 }
