@@ -10,24 +10,29 @@ final class HuiGroup: Identifiable {
     var startDate: Date
     var frequency: Frequency
     var status: GroupStatus
-    
-    /// ID của User (Chủ Hụi) đã tạo dây này — dùng để lọc đúng dây của từng chủ
-    var ownerUserID: UUID?
+    var userRole: UserRoleInGroup = UserRoleInGroup.owner
+    var notes: String = ""
     
     var members: [HuiMember] = []
     
     @Relationship(deleteRule: .cascade, inverse: \HuiRound.group)
     var rounds: [HuiRound] = []
     
-    init(name: String, baseAmount: Double, totalRounds: Int, startDate: Date = Date(), frequency: Frequency = Frequency.monthly, status: GroupStatus = GroupStatus.active, ownerUserID: UUID? = nil) {
+    init(name: String, baseAmount: Double, totalRounds: Int, startDate: Date = Date(), frequency: Frequency = Frequency.monthly, status: GroupStatus = GroupStatus.active, userRole: UserRoleInGroup = .owner, notes: String = "") {
         self.name = name
         self.baseAmount = baseAmount
         self.totalRounds = totalRounds
         self.startDate = startDate
         self.frequency = frequency
         self.status = status
-        self.ownerUserID = ownerUserID
+        self.userRole = userRole
+        self.notes = notes
     }
+}
+
+enum UserRoleInGroup: String, Codable {
+    case owner = "Tôi là Chủ"
+    case participant = "Tôi là Người chơi"
 }
 
 enum Frequency: String, Codable, CaseIterable {

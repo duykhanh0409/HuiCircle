@@ -143,6 +143,28 @@ Sprint 4 — Proper Member Separation
 ├── Member chỉ thấy dây hụi mình tham gia
 └── [UX-01] Tạo dây hụi multi-step (gồm thêm member)
 
-Sprint 5 — Dashboard thực tế
-└── [UX-02] Dashboard đọc dữ liệu thực từ SwiftData
+Sprint 4 — Dashboard thực tế & Financial Insights
+├── [UX-02] Dashboard đọc dữ liệu thực từ SwiftData (Tổng tiền đóng, Tổng lãi)
+├── [IMP-04] Tính toán "Tổng tiền dự kiến hốt" cho Member
+└── [UX-04] Timeline lịch sử đóng hụi chi tiết (Tiền + Lãi từng kỳ)
+
+Sprint 5 — Advanced Winning Flow
+├── [IMP-05] Thêm "Tiền thảo" (Phí quản lý) và "Tiền thăm" (Bỏ thầu) vào logic hốt
+├── [UX-05] Phân loại Hốt sớm / Hốt chót
+└── [IMP-06] Trường "Ghi chú" cho từng dây hụi
+
+Sprint 6 — Utility & Safety
+├── [UX-06] Hệ thống Thùng rác (Trash) để khôi phục dây hụi đã xoá
+├── [UX-07] Phân loại Hụi sống / Hụi đã hoàn thành (Archive)
+└── [UX-08] Tìm kiếm dây hụi
 ```
+
+---
+
+## 🔵 "Sổ Hụi" App Analysis Insights (Reference for Design)
+
+Dựa trên screenshot app đối thủ, chúng ta cần học tập các điểm sau:
+1. **Financial Focus**: Người dùng quan tâm nhất là "Lời bao nhiêu" và "Khi nào hốt được bao nhiêu".
+2. **Visual Timeline**: Thay vì chỉ check-box, hãy hiển thị số tiền chênh lệch (lãi) ngay tại từng kỳ.
+3. **Safety**: Luôn có Thùng rác để tránh mất dữ liệu quan trọng.
+4. **Customization**: Thêm Ghi chú để cá nhân hoá mục tiêu chơi hụi.
