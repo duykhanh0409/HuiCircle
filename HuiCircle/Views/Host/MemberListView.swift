@@ -9,6 +9,8 @@ struct MemberListView: View {
     @State private var newMemberName = ""
     @State private var newMemberPhone = ""
     
+    @State private var showingLimitAlert = false
+    
     var body: some View {
         List {
             if group.members.isEmpty {
@@ -48,7 +50,13 @@ struct MemberListView: View {
         .navigationTitle("Danh sách thành viên")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddMember = true }) {
+                Button(action: { 
+                    if group.members.count < group.totalRounds {
+                        showingAddMember = true
+                    } else {
+                        showingLimitAlert = true
+                    }
+                }) {
                     Image(systemName: "person.badge.plus")
                 }
             }
@@ -62,7 +70,12 @@ struct MemberListView: View {
                 addMember()
             }
         } message: {
-            Text("Nhập thông tin người chơi")
+            Text("Nhập thông tin người chơi (\(group.members.count)/\(group.totalRounds) phần)")
+        }
+        .alert("Đã đủ thành viên", isPresented: $showingLimitAlert) {
+            Button("Đóng", role: .cancel) { }
+        } message: {
+            Text("Dây hụi này chỉ có \(group.totalRounds) phần. Bạn không thể thêm nhiều thành viên hơn.")
         }
     }
     

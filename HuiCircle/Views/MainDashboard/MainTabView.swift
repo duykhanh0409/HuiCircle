@@ -199,13 +199,16 @@ struct AllGroupsView: View {
                 } else {
                     ForEach(groups) { group in
                         NavigationLink(destination: groupDetailDestination(group)) {
+                                let completedRounds = group.rounds.filter { $0.status == .completed }.count
+                            let progress = group.totalRounds > 0 ? Double(completedRounds) / Double(group.totalRounds) : 0.0
+                            
                             HuiCardView(
                                 title: group.name,
                                 amount: group.baseAmount,
                                 frequency: group.frequency.rawValue,
                                 statusText: group.status.rawValue,
                                 statusColor: group.status == .active ? .green : .blue,
-                                progress: 0.1 // placeholder
+                                progress: progress
                             )
                         }
                         .listRowSeparator(.hidden)

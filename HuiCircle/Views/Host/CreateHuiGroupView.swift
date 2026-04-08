@@ -98,6 +98,14 @@ struct CreateHuiGroupView: View {
             newGroup.rounds.append(round)
         }
         
+        // Nếu là vai trò Người chơi, tự động thêm 1 slot cho chính mình để theo dõi
+        if userRole == .participant {
+            let me = HuiMember(name: "Phần hụi của tôi", phone: "Chủ sở hữu", joinedAt: Date(), hasWon: false)
+            modelContext.insert(me)
+            me.group = newGroup
+            newGroup.members.append(me)
+        }
+        
         try? modelContext.save()
         dismiss()
     }
